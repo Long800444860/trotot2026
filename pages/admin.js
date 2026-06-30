@@ -60,29 +60,33 @@ export default function Admin() {
     setTimeout(() => setMsg(''), 6000)
   }
 
+  useEffect(() => {
+    function globalPasteHandler(e) {
+      const items = e.clipboardData?.items
+      if (!items) return
+      const pastedFiles = []
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile()
+          if (file) pastedFiles.push(file)
+        }
+      }
+      if (pastedFiles.length > 0) {
+        e.preventDefault()
+        setImgFiles(prev => [...prev, ...pastedFiles])
+        setImgPreviews(prev => [...prev, ...pastedFiles.map(f => URL.createObjectURL(f))])
+        setMsg(`Đã dán ${pastedFiles.length} ảnh từ clipboard!`)
+        setTimeout(() => setMsg(''), 3000)
+      }
+    }
+    window.addEventListener('paste', globalPasteHandler)
+    return () => window.removeEventListener('paste', globalPasteHandler)
+  }, [])
+
   function handleImgChange(e) {
     const files = Array.from(e.target.files)
     setImgFiles(prev => [...prev, ...files])
     setImgPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
-  }
-
-  function handleImgPaste(e) {
-    const items = e.clipboardData?.items
-    if (!items) return
-    const pastedFiles = []
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        const file = item.getAsFile()
-        if (file) pastedFiles.push(file)
-      }
-    }
-    if (pastedFiles.length > 0) {
-      e.preventDefault()
-      setImgFiles(prev => [...prev, ...pastedFiles])
-      setImgPreviews(prev => [...prev, ...pastedFiles.map(f => URL.createObjectURL(f))])
-      setMsg(`Đã dán ${pastedFiles.length} ảnh từ clipboard!`)
-      setTimeout(() => setMsg(''), 3000)
-    }
   }
 
   function removeImg(idx) {
@@ -225,13 +229,14 @@ export default function Admin() {
             <div>
               <label className="text-xs text-gray-400 block mb-1">Ảnh phòng</label>
               <div
-                tabIndex={0}
                 onClick={() => fileRef.current.click()}
-                onPaste={handleImgPaste}
-                className="border-2 border-dashed border-gray-200 hover:border-emerald-400 focus:border-emerald-400 rounded-lg p-4 text-center cursor-pointer transition-colors outline-none"
+                className="border-2 border-dashed border-gray-200 hover:border-emerald-400 rounded-lg p-4 text-center cursor-pointer transition-colors"
               >
                 <div className="text-2xl mb-1">📸</div>
-                <div className="text-xs text-gray-400">Bấm để chọn ảnh từ máy, hoặc <b>bấm vào đây rồi Ctrl+V</b> để dán ảnh đã copy</div>
+                <div className="text-xs text-gray-400">Bấm để chọn ảnh từ máy</div>
+              </div>
+              <div className="text-xs text-emerald-600 text-center mt-1.5 bg-emerald-50 rounded-lg py-1.5">
+                💡 Hoặc copy ảnh rồi bấm <b>Ctrl+V</b> ở bất kỳ đâu trên trang này để dán
               </div>
               <input type="file" multiple accept="image/*" ref={fileRef} onChange={handleImgChange} className="hidden" />
               {imgPreviews.length > 0 && (
