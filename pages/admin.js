@@ -5,24 +5,26 @@ import { uploadToCloudinary } from '../lib/cloudinary'
 import { parseZaloText } from '../lib/parseZalo'
 
 const QUAN = ['Cầu Giấy','Đống Đa','Hai Bà Trưng','Hoàn Kiếm','Tây Hồ','Thanh Xuân','Nam Từ Liêm','Bắc Từ Liêm']
+const TIENICH_LIST = ['điều hòa','tủ lạnh','máy giặt','tivi','bếp','nóng lạnh','giường','tủ quần áo','bàn ghế','ban công','thang máy','gác lửng','cửa vân tay','chỗ để xe']
 const ADMIN_PASS = process.env.NEXT_PUBLIC_ADMIN_PASS || 'admin123'
+
+const emptyForm = {
+  ten: '', ma: '', kv: '', dc: '', gia: '', loai: '1 ngủ 1 bếp',
+  tang: '', dien_tich: '', tienich: [], dich_vu: '', luuy: '', mota: '', available: true
+}
 
 export default function Admin() {
   const [authed, setAuthed] = useState(false)
   const [pass, setPass] = useState('')
   const [rooms, setRooms] = useState([])
   const [pasteText, setPasteText] = useState('')
-  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [imgPreviews, setImgPreviews] = useState([])
   const [imgFiles, setImgFiles] = useState([])
   const fileRef = useRef()
 
-  const [form, setForm] = useState({
-    ten: '', ma: '', kv: '', dc: '', gia: '', loai: '1 ngủ 1 bếp',
-    tang: '', tienich: '', dien: '', nuoc: '', wifi: '', vs: '', luuy: '', mota: '', available: true
-  })
+  const [form, setForm] = useState(emptyForm)
 
   useEffect(() => { if (authed) fetchRooms() }, [authed])
 
@@ -47,16 +49,14 @@ export default function Admin() {
       tang: parsed.tang || f.tang,
       loai: parsed.loai || f.loai,
       gia: parsed.gia ? String(parsed.gia) : f.gia,
-      tienich: parsed.tienich.length ? parsed.tienich.join(', ') : f.tienich,
-      dien: parsed.dien || f.dien,
-      nuoc: parsed.nuoc || f.nuoc,
-      wifi: parsed.wifi || f.wifi,
-      vs: parsed.vs || f.vs,
+      dien_tich: parsed.dien_tich ? String(parsed.dien_tich) : f.dien_tich,
+      tienich: parsed.tienich.length ? parsed.tienich : f.tienich,
+      dich_vu: parsed.dich_vu || f.dich_vu,
       luuy: parsed.luuy || f.luuy,
       mota: parsed.mota || f.mota,
       ten: (parsed.loai || 'Phòng trọ') + (parsed.kv ? ` – ${parsed.kv}` : ''),
     }))
-    setMsg('Đã điền tự động — kiểm tra lại các ô, phần nào parser không bắt được đã có sẵn trong "Mô tả thêm" để bạn tự bổ sung tay.')
+    setMsg('✨ Đã điền tự động — kiểm tra lại các ô, phần nào parser không bắt được hãy tự sửa tay.')
     setTimeout(() => setMsg(''), 6000)
   }
 
@@ -75,7 +75,7 @@ export default function Admin() {
         e.preventDefault()
         setImgFiles(prev => [...prev, ...pastedFiles])
         setImgPreviews(prev => [...prev, ...pastedFiles.map(f => URL.createObjectURL(f))])
-        setMsg(`Đã dán ${pastedFiles.length} ảnh từ clipboard!`)
+        setMsg(`📸 Đã dán ${pastedFiles.length} ảnh!`)
         setTimeout(() => setMsg(''), 3000)
       }
     }
@@ -94,6 +94,15 @@ export default function Admin() {
     setImgPreviews(prev => prev.filter((_, i) => i !== idx))
   }
 
+  function toggleTienich(item) {
+    setForm(f => ({
+      ...f,
+      tienich: f.tienich.includes(item)
+        ? f.tienich.filter(x => x !== item)
+        : [...f.tienich, item]
+    }))
+  }
+
   async function saveRoom() {
     if (!form.ten || !form.kv || !form.gia) { alert('Cần điền tên phòng, khu vực, giá'); return }
     setSaving(true)
@@ -107,16 +116,18 @@ export default function Admin() {
       setMsg('Đang lưu phòng...')
       const { error } = await supabase.from('rooms').insert({
         ten: form.ten, ma: form.ma, kv: form.kv, dc: form.dc,
-        gia: parseFloat(form.gia), loai: form.loai, tang: form.tang,
-        tienich: form.tienich.split(',').map(x => x.trim()).filter(Boolean),
-        dien: form.dien, nuoc: form.nuoc, wifi: form.wifi, vs: form.vs,
+        gia: parseFloat(form.gia),
+        loai: form.loai, tang: form.tang,
+        dien_tich: form.dien_tich ? parseFloat(form.dien_tich) : null,
+        tienich: form.tienich,
+        dich_vu: form.dich_vu,
         luuy: form.luuy, mota: form.mota,
         available: form.available, is_new: true,
         images: imageUrls,
       })
       if (error) throw error
       setMsg('✅ Đã lưu thành công!')
-      setForm({ ten:'',ma:'',kv:'',dc:'',gia:'',loai:'1 ngủ 1 bếp',tang:'',tienich:'',dien:'',nuoc:'',wifi:'',vs:'',luuy:'',mota:'',available:true })
+      setForm(emptyForm)
       setPasteText('')
       setImgFiles([])
       setImgPreviews([])
@@ -203,23 +214,34 @@ export default function Admin() {
                 <select value={form.loai} onChange={e => setForm(f=>({...f,loai:e.target.value}))} className="inp">
                   <option>1 ngủ 1 bếp</option><option>Phòng đơn</option><option>Mini studio</option><option>Căn hộ mini</option>
                 </select></div>
-              <div><label className="text-xs text-gray-400 block mb-1">Tầng / Thang</label>
-                <input value={form.tang} onChange={e => setForm(f=>({...f,tang:e.target.value}))} className="inp" placeholder="Tầng 4 – Thang bộ" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Diện tích (m²)</label>
+                <input value={form.dien_tich} onChange={e => setForm(f=>({...f,dien_tich:e.target.value}))} className="inp" placeholder="30" /></div>
             </div>
             <div><label className="text-xs text-gray-400 block mb-1">Địa chỉ đầy đủ</label>
               <input value={form.dc} onChange={e => setForm(f=>({...f,dc:e.target.value}))} className="inp" placeholder="Ngõ 169 Doãn Kế Thiện, Cầu Giấy" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">Tiện ích (cách dấu phẩy)</label>
-              <input value={form.tienich} onChange={e => setForm(f=>({...f,tienich:e.target.value}))} className="inp" placeholder="máy lạnh, tủ lạnh, bếp" /></div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-xs text-gray-400 block mb-1">Điện</label>
-                <input value={form.dien} onChange={e => setForm(f=>({...f,dien:e.target.value}))} className="inp" placeholder="3.800đ/số" /></div>
-              <div><label className="text-xs text-gray-400 block mb-1">Nước</label>
-                <input value={form.nuoc} onChange={e => setForm(f=>({...f,nuoc:e.target.value}))} className="inp" placeholder="120.000đ/người" /></div>
-              <div><label className="text-xs text-gray-400 block mb-1">Wifi</label>
-                <input value={form.wifi} onChange={e => setForm(f=>({...f,wifi:e.target.value}))} className="inp" placeholder="100.000đ/phòng" /></div>
-              <div><label className="text-xs text-gray-400 block mb-1">Vệ sinh</label>
-                <input value={form.vs} onChange={e => setForm(f=>({...f,vs:e.target.value}))} className="inp" placeholder="25.000đ/người" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Tầng / Thang</label>
+              <input value={form.tang} onChange={e => setForm(f=>({...f,tang:e.target.value}))} className="inp" placeholder="Tầng 4 – Thang bộ" /></div>
+
+            {/* Nội thất tag bấm chọn */}
+            <div>
+              <label className="text-xs text-gray-400 block mb-2">Nội thất & tiện ích</label>
+              <div className="flex flex-wrap gap-1.5">
+                {TIENICH_LIST.map(item => (
+                  <button key={item} type="button" onClick={() => toggleTienich(item)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                      form.tienich.includes(item)
+                        ? 'bg-emerald-500 text-white border-emerald-500'
+                        : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-emerald-300'
+                    }`}>
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            <div><label className="text-xs text-gray-400 block mb-1">Phí dịch vụ (tham khảo)</label>
+              <input value={form.dich_vu} onChange={e => setForm(f=>({...f,dich_vu:e.target.value}))} className="inp"
+                placeholder="Điện 3.8k/số · Nước 120k/người · Wifi 100k/phòng" /></div>
             <div><label className="text-xs text-gray-400 block mb-1">Lưu ý</label>
               <input value={form.luuy} onChange={e => setForm(f=>({...f,luuy:e.target.value}))} className="inp" placeholder="1 cọc 1 · Gọi trước 30p" /></div>
             <div><label className="text-xs text-gray-400 block mb-1">Mô tả thêm</label>
@@ -228,10 +250,8 @@ export default function Admin() {
             {/* Upload ảnh */}
             <div>
               <label className="text-xs text-gray-400 block mb-1">Ảnh phòng</label>
-              <div
-                onClick={() => fileRef.current.click()}
-                className="border-2 border-dashed border-gray-200 hover:border-emerald-400 rounded-lg p-4 text-center cursor-pointer transition-colors"
-              >
+              <div onClick={() => fileRef.current.click()}
+                className="border-2 border-dashed border-gray-200 hover:border-emerald-400 rounded-lg p-4 text-center cursor-pointer transition-colors">
                 <div className="text-2xl mb-1">📸</div>
                 <div className="text-xs text-gray-400">Bấm để chọn ảnh từ máy</div>
               </div>
@@ -281,7 +301,9 @@ export default function Admin() {
                     {r.available ? 'Trống' : 'Đã thuê'}
                   </span>
                 </div>
-                <div className="text-xs text-gray-400 mb-2">{r.kv} · {r.gia} tr/tháng · {r.loai}</div>
+                <div className="text-xs text-gray-400 mb-2">
+                  {r.kv} · {r.gia} tr/tháng{r.dien_tich ? ` · ${r.dien_tich}m²` : ''} · {r.loai}
+                </div>
                 <div className="flex gap-2">
                   <button onClick={() => toggleAvail(r.id, r.available)}
                     className="text-xs px-2.5 py-1 border border-emerald-300 text-emerald-600 rounded-lg hover:bg-emerald-50">
