@@ -5,7 +5,7 @@ import RoomCard from '../components/RoomCard'
 import RoomModal from '../components/RoomModal'
 
 const QUAN = ['Cầu Giấy','Đống Đa','Hai Bà Trưng','Hoàn Kiếm','Tây Hồ','Thanh Xuân','Nam Từ Liêm','Bắc Từ Liêm']
-const TAGS = ['máy lạnh','tủ lạnh','bếp','thang máy','ban công','gần trường']
+const TIENICH_TAGS = ['máy giặt','tủ lạnh','điều hòa','tivi','bếp','nóng lạnh','ban công','thang máy','chỗ để xe']
 const HOTLINE = process.env.NEXT_PUBLIC_HOTLINE || '0901 234 567'
 
 export default function Home() {
@@ -13,14 +13,13 @@ export default function Home() {
   const [filtered, setFiltered] = useState([])
   const [kv, setKv] = useState('')
   const [gia, setGia] = useState('')
+  const [dienTich, setDienTich] = useState('')
   const [loai, setLoai] = useState('')
   const [tags, setTags] = useState([])
   const [sort, setSort] = useState('new')
   const [selected, setSelected] = useState(null)
 
-  useEffect(() => {
-    fetchRooms()
-  }, [])
+  useEffect(() => { fetchRooms() }, [])
 
   async function fetchRooms() {
     const { data } = await supabase
@@ -37,16 +36,26 @@ export default function Home() {
       const [mn, mx] = gia.split('-').map(Number)
       list = list.filter(r => r.gia >= mn && r.gia <= mx)
     }
+    if (dienTich) {
+      const [mn, mx] = dienTich.split('-').map(Number)
+      list = list.filter(r => !r.dien_tich || (r.dien_tich >= mn && r.dien_tich <= mx))
+    }
     if (loai) list = list.filter(r => r.loai === loai)
     tags.forEach(t => { list = list.filter(r => (r.tienich || []).includes(t)) })
     if (sort === 'price-asc') list.sort((a, b) => a.gia - b.gia)
     else if (sort === 'price-desc') list.sort((a, b) => b.gia - a.gia)
     setFiltered(list)
-  }, [rooms, kv, gia, loai, tags, sort])
+  }, [rooms, kv, gia, dienTich, loai, tags, sort])
 
   function toggleTag(t) {
     setTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
   }
+
+  function resetFilters() {
+    setKv(''); setGia(''); setDienTich(''); setLoai(''); setTags([])
+  }
+
+  const hasFilter = kv || gia || dienTich || loai || tags.length > 0
 
   return (
     <>
@@ -55,7 +64,6 @@ export default function Home() {
         <meta name="description" content="Tìm phòng trọ tại Hà Nội – cập nhật liên tục" />
       </Head>
 
-      {/* Topbar */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2 font-medium text-gray-800">
           <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-white text-sm">🏠</div>
@@ -66,7 +74,6 @@ export default function Home() {
         </a>
       </header>
 
-      {/* Hero + Filters */}
       <div className="bg-emerald-500 px-4 pt-6 pb-5">
         <h1 className="text-white text-xl font-medium mb-1">Tìm phòng trọ phù hợp</h1>
         <p className="text-emerald-100 text-xs mb-4">Danh sách cập nhật liên tục · Liên hệ trực tiếp tư vấn viên</p>
@@ -89,6 +96,16 @@ export default function Home() {
             </select>
           </div>
           <div>
+            <label className="text-xs text-gray-400 block mb-1">Diện tích</label>
+            <select value={dienTich} onChange={e => setDienTich(e.target.value)} className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50">
+              <option value="">Tất cả</option>
+              <option value="0-20">Dưới 20m²</option>
+              <option value="20-30">20–30m²</option>
+              <option value="30-45">30–45m²</option>
+              <option value="45-999">Trên 45m²</option>
+            </select>
+          </div>
+          <div>
             <label className="text-xs text-gray-400 block mb-1">Loại phòng</label>
             <select value={loai} onChange={e => setLoai(e.target.value)} className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50">
               <option value="">Tất cả</option>
@@ -98,26 +115,27 @@ export default function Home() {
               <option>Căn hộ mini</option>
             </select>
           </div>
-          <div className="flex items-end">
-            <button onClick={() => {}} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium py-1.5 rounded-lg">
-              🔍 Lọc
-            </button>
-          </div>
         </div>
         <div className="flex gap-2 flex-wrap mt-3">
-          {TAGS.map(t => (
+          {TIENICH_TAGS.map(t => (
             <button key={t} onClick={() => toggleTag(t)}
-              className={`text-xs px-3 py-1 rounded-full border transition-all ${tags.includes(t) ? 'bg-white text-emerald-600 border-white' : 'border-emerald-300 text-emerald-100'}`}>
+              className={`text-xs px-3 py-1 rounded-full border transition-all ${tags.includes(t) ? 'bg-white text-emerald-600 border-white font-medium' : 'border-emerald-300 text-emerald-100'}`}>
               {t}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Results */}
       <main className="max-w-5xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-3">
-          <span className="text-sm text-gray-400">Tìm thấy {filtered.length} phòng</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400">Tìm thấy {filtered.length} phòng</span>
+            {hasFilter && (
+              <button onClick={resetFilters} className="text-xs text-emerald-600 underline underline-offset-2">
+                Xóa bộ lọc
+              </button>
+            )}
+          </div>
           <select value={sort} onChange={e => setSort(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1">
             <option value="new">Mới nhất</option>
             <option value="price-asc">Giá tăng dần</option>
