@@ -71,7 +71,11 @@ export default function RoomModal({ room: r, onClose, hotline }) {
           {r.dich_vu && (
             <div className="mb-4 bg-gray-50 rounded-lg p-3">
               <div className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">Phí dịch vụ</div>
-              <div className="text-sm text-gray-500">{r.dich_vu}</div>
+              <ul className="text-sm text-gray-500 space-y-0.5">
+                {r.dich_vu.split(' · ').map((item, i) => (
+                  <li key={i}>· {item}</li>
+                ))}
+              </ul>
             </div>
           )}
 
