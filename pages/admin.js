@@ -22,6 +22,7 @@ export default function Admin() {
   const [msg, setMsg] = useState('')
   const [imgPreviews, setImgPreviews] = useState([])
   const [imgFiles, setImgFiles] = useState([])
+  const [newTienich, setNewTienich] = useState('')
   const fileRef = useRef()
 
   const [form, setForm] = useState(emptyForm)
@@ -98,6 +99,15 @@ export default function Admin() {
         ? f.tienich.filter(x => x !== item)
         : [...f.tienich, item]
     }))
+  }
+
+  function addCustomTienich() {
+    const val = newTienich.trim()
+    if (!val) return
+    if (!form.tienich.includes(val)) {
+      setForm(f => ({ ...f, tienich: [...f.tienich, val] }))
+    }
+    setNewTienich('')
   }
 
   async function saveRoom() {
@@ -209,10 +219,11 @@ export default function Admin() {
             <div><label className="text-xs text-gray-400 block mb-1">Địa chỉ đầy đủ</label>
               <input value={form.dc} onChange={e => setForm(f=>({...f,dc:e.target.value}))} className="inp" placeholder="Ngõ 169 Doãn Kế Thiện, Cầu Giấy" /></div>
 
-            {/* Nội thất tag bấm chọn */}
+            {/* Nội thất tag */}
             <div>
               <label className="text-xs text-gray-400 block mb-2">Nội thất & tiện ích</label>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {/* Tag mặc định — bấm để chọn/bỏ */}
                 {TIENICH_LIST.map(item => (
                   <button key={item} type="button" onClick={() => toggleTienich(item)}
                     className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
@@ -223,6 +234,29 @@ export default function Admin() {
                     {item}
                   </button>
                 ))}
+                {/* Tag tự thêm — có nút ✕ để xóa hẳn */}
+                {form.tienich.filter(t => !TIENICH_LIST.includes(t)).map(item => (
+                  <span key={item} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-500 text-white border-emerald-500 flex items-center gap-1">
+                    {item}
+                    <button type="button"
+                      onClick={() => setForm(f => ({ ...f, tienich: f.tienich.filter(x => x !== item) }))}
+                      className="hover:opacity-70 leading-none">✕</button>
+                  </span>
+                ))}
+              </div>
+              {/* Ô thêm mới */}
+              <div className="flex gap-1.5">
+                <input
+                  value={newTienich}
+                  onChange={e => setNewTienich(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomTienich() } }}
+                  placeholder="Thêm tiện ích khác..."
+                  className="inp flex-1"
+                />
+                <button type="button" onClick={addCustomTienich}
+                  className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-emerald-50 hover:text-emerald-600 border border-gray-200 rounded-lg whitespace-nowrap">
+                  + Thêm
+                </button>
               </div>
             </div>
 
