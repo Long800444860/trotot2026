@@ -9,8 +9,8 @@ const TIENICH_LIST = ['điều hòa','tủ lạnh','máy giặt','tivi','bếp',
 const ADMIN_PASS = process.env.NEXT_PUBLIC_ADMIN_PASS || 'admin123'
 
 const emptyForm = {
-  ten: '', ma: '', kv: '', dc: '', gia: '', loai: '1 ngủ 1 bếp',
-  tang: '', dien_tich: '', tienich: [], dich_vu: '', luuy: '', mota: '', available: true
+  ten: '', kv: '', dc: '', gia: '',
+  dien_tich: '', tienich: [], dich_vu: '', luuy: '', mota: '', available: true
 }
 
 export default function Admin() {
@@ -43,11 +43,8 @@ export default function Admin() {
     const parsed = parseZaloText(pasteText)
     setForm(f => ({
       ...f,
-      ma: parsed.ma || f.ma,
       kv: parsed.kv || f.kv,
       dc: parsed.dc || f.dc,
-      tang: parsed.tang || f.tang,
-      loai: parsed.loai || f.loai,
       gia: parsed.gia ? String(parsed.gia) : f.gia,
       dien_tich: parsed.dien_tich ? String(parsed.dien_tich) : f.dien_tich,
       tienich: parsed.tienich.length ? parsed.tienich : f.tienich,
@@ -115,9 +112,8 @@ export default function Admin() {
       }
       setMsg('Đang lưu phòng...')
       const { error } = await supabase.from('rooms').insert({
-        ten: form.ten, ma: form.ma, kv: form.kv, dc: form.dc,
+        ten: form.ten, kv: form.kv, dc: form.dc,
         gia: parseFloat(form.gia),
-        loai: form.loai, tang: form.tang,
         dien_tich: form.dien_tich ? parseFloat(form.dien_tich) : null,
         tienich: form.tienich,
         dich_vu: form.dich_vu,
@@ -194,12 +190,9 @@ export default function Admin() {
 
             {msg && <div className="bg-emerald-50 text-emerald-700 text-xs px-3 py-2 rounded-lg">{msg}</div>}
 
-            <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-xs text-gray-400 block mb-1">Tên phòng</label>
-                <input value={form.ten} onChange={e => setForm(f=>({...f,ten:e.target.value}))} className="inp" placeholder="Phòng 1N1B – Cầu Giấy" /></div>
-              <div><label className="text-xs text-gray-400 block mb-1">Mã phòng</label>
-                <input value={form.ma} onChange={e => setForm(f=>({...f,ma:e.target.value}))} className="inp" placeholder="TS192" /></div>
-            </div>
+            <div><label className="text-xs text-gray-400 block mb-1">Tên phòng</label>
+              <input value={form.ten} onChange={e => setForm(f=>({...f,ten:e.target.value}))} className="inp" placeholder="Phòng 1N1B – Cầu Giấy" /></div>
+
             <div className="grid grid-cols-2 gap-2">
               <div><label className="text-xs text-gray-400 block mb-1">Khu vực</label>
                 <select value={form.kv} onChange={e => setForm(f=>({...f,kv:e.target.value}))} className="inp">
@@ -209,18 +202,12 @@ export default function Admin() {
               <div><label className="text-xs text-gray-400 block mb-1">Giá (triệu/tháng)</label>
                 <input value={form.gia} onChange={e => setForm(f=>({...f,gia:e.target.value}))} className="inp" placeholder="5" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-xs text-gray-400 block mb-1">Loại phòng</label>
-                <select value={form.loai} onChange={e => setForm(f=>({...f,loai:e.target.value}))} className="inp">
-                  <option>1 ngủ 1 bếp</option><option>Phòng đơn</option><option>Mini studio</option><option>Căn hộ mini</option>
-                </select></div>
-              <div><label className="text-xs text-gray-400 block mb-1">Diện tích (m²)</label>
-                <input value={form.dien_tich} onChange={e => setForm(f=>({...f,dien_tich:e.target.value}))} className="inp" placeholder="30" /></div>
-            </div>
+
+            <div><label className="text-xs text-gray-400 block mb-1">Diện tích (m²)</label>
+              <input value={form.dien_tich} onChange={e => setForm(f=>({...f,dien_tich:e.target.value}))} className="inp" placeholder="30" /></div>
+
             <div><label className="text-xs text-gray-400 block mb-1">Địa chỉ đầy đủ</label>
               <input value={form.dc} onChange={e => setForm(f=>({...f,dc:e.target.value}))} className="inp" placeholder="Ngõ 169 Doãn Kế Thiện, Cầu Giấy" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">Tầng / Thang</label>
-              <input value={form.tang} onChange={e => setForm(f=>({...f,tang:e.target.value}))} className="inp" placeholder="Tầng 4 – Thang bộ" /></div>
 
             {/* Nội thất tag bấm chọn */}
             <div>
@@ -242,8 +229,10 @@ export default function Admin() {
             <div><label className="text-xs text-gray-400 block mb-1">Phí dịch vụ (tham khảo)</label>
               <input value={form.dich_vu} onChange={e => setForm(f=>({...f,dich_vu:e.target.value}))} className="inp"
                 placeholder="Điện 3.8k/số · Nước 120k/người · Wifi 100k/phòng" /></div>
+
             <div><label className="text-xs text-gray-400 block mb-1">Lưu ý</label>
               <input value={form.luuy} onChange={e => setForm(f=>({...f,luuy:e.target.value}))} className="inp" placeholder="1 cọc 1 · Gọi trước 30p" /></div>
+
             <div><label className="text-xs text-gray-400 block mb-1">Mô tả thêm</label>
               <textarea value={form.mota} onChange={e => setForm(f=>({...f,mota:e.target.value}))} rows={2} className="inp resize-none" placeholder="Mô tả phòng..." /></div>
 
@@ -302,7 +291,7 @@ export default function Admin() {
                   </span>
                 </div>
                 <div className="text-xs text-gray-400 mb-2">
-                  {r.kv} · {r.gia} tr/tháng{r.dien_tich ? ` · ${r.dien_tich}m²` : ''} · {r.loai}
+                  {r.kv} · {r.gia} tr/tháng{r.dien_tich ? ` · ${r.dien_tich}m²` : ''}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => toggleAvail(r.id, r.available)}
