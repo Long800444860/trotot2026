@@ -37,15 +37,15 @@ export default function RoomModal({ room: r, onClose, hotline }) {
           </div>
           <div className="text-xs text-gray-400 mb-2">📍 {r.dc}</div>
           <div className="text-2xl font-medium text-emerald-500 mb-4">
-            {r.gia.toFixed(1)} triệu <span className="text-sm font-normal text-gray-400">/tháng</span>
+            {r.gia?.toFixed(1)} triệu <span className="text-sm font-normal text-gray-400">/tháng</span>
           </div>
 
           {/* Info grid */}
           <div className="grid grid-cols-2 gap-2 mb-4">
             {[
-              ['Loại phòng', r.loai],
-              ['Vị trí', r.tang],
-              ['Nội thất', 'Full nội thất'],
+              ['Loại phòng', r.loai || '–'],
+              ['Diện tích', r.dien_tich ? `${r.dien_tich} m²` : '–'],
+              ['Vị trí', r.tang || '–'],
               ['Mã phòng', r.ma || '–'],
             ].map(([l, v]) => (
               <div key={l} className="bg-gray-50 rounded-lg p-2.5">
@@ -56,31 +56,22 @@ export default function RoomModal({ room: r, onClose, hotline }) {
           </div>
 
           {/* Tiện ích */}
-          <div className="mb-4">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">Tiện ích</div>
-            <div className="flex flex-wrap gap-1.5">
-              {(r.tienich || []).map(t => (
-                <span key={t} className="text-xs bg-gray-50 border border-gray-100 rounded-full px-2.5 py-1 text-gray-600">{t}</span>
-              ))}
+          {(r.tienich || []).length > 0 && (
+            <div className="mb-4">
+              <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">Nội thất & tiện ích</div>
+              <div className="flex flex-wrap gap-1.5">
+                {(r.tienich || []).map(t => (
+                  <span key={t} className="text-xs bg-gray-50 border border-gray-100 rounded-full px-2.5 py-1 text-gray-600">{t}</span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Dịch vụ */}
-          <div className="mb-4">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">Phí dịch vụ</div>
-            <div className="text-sm text-gray-500 leading-loose">
-              ⚡ Điện: {r.dien || '–'}<br />
-              💧 Nước: {r.nuoc || '–'}<br />
-              🌐 Wifi: {r.wifi || '–'}<br />
-              🧹 Vệ sinh: {r.vs || '–'}
-            </div>
-          </div>
-
-          {/* Mô tả */}
-          {r.mota && (
-            <div className="mb-4">
-              <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">Mô tả</div>
-              <p className="text-sm text-gray-500 leading-relaxed">{r.mota}</p>
+          {r.dich_vu && (
+            <div className="mb-4 bg-gray-50 rounded-lg p-3">
+              <div className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">Phí dịch vụ</div>
+              <div className="text-sm text-gray-500">{r.dich_vu}</div>
             </div>
           )}
 
@@ -88,6 +79,14 @@ export default function RoomModal({ room: r, onClose, hotline }) {
           {r.luuy && (
             <div className="bg-orange-50 rounded-lg p-3 text-xs text-orange-700 mb-4">
               ⚠️ {r.luuy}
+            </div>
+          )}
+
+          {/* Mô tả */}
+          {r.mota && (
+            <div className="mb-4">
+              <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">Mô tả đầy đủ</div>
+              <p className="text-xs text-gray-400 leading-relaxed whitespace-pre-line">{r.mota}</p>
             </div>
           )}
 
